@@ -1,0 +1,40 @@
+############################################
+# Name: Build
+# Description: Solution build
+# Author: RzR
+############################################ 
+
+trigger: none
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+  sdkVersion: '8.0.302'
+  buildConfiguration: 'Release'
+  solutionPath: '$(System.DefaultWorkingDirectory)/src/App.sln'
+
+
+stages:
+- stage: build_solution
+  displayName: Build solution
+  jobs:
+    - job: Build
+      displayName: Build
+      steps:
+#      - task: NuGetAuthenticate@1
+#        inputs:
+#          nuGetServiceConnections: 'Azure Nuget feed'
+        
+      - task: UseDotNet@2
+        displayName: "Use .Net $(sdkVersion) SDK"
+        inputs:
+          packageType: 'sdk'
+          version: '$(sdkVersion)'
+
+      - task: DotNetCoreCLI@2
+        inputs:
+          command: 'build'
+          arguments: '$(solutionPath) --configuration $(buildConfiguration)'
+        displayName: 'dotnet build $(buildConfiguration)'

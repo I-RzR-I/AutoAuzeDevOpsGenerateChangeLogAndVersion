@@ -1,0 +1,41 @@
+############################################
+# Name: Build 
+# Description: Run version generation and changelog history
+# Author: RzR
+############################################ 
+
+trigger: none
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+  #branchName: $[replace(variables['Build.SourceBranch'], 'refs/heads/', '')]
+  branchName: $[replace(variables['System.PullRequest.SourceBranch'], 'refs/heads/', '')]
+
+stages:
+- stage: gen_changelog_version
+  displayName: Generate new code version and commits changelog
+  jobs:
+    - job: Build
+      displayName: Build
+      steps:
+       - checkout: self
+         persistCredentials: true
+       - task: Bash@3
+         inputs:
+           targetType: 'inline'
+           script: |
+             git config --global user.email "$(commit_user_email)"
+             git config --global user.name "DevOps ChangeLog and Version Pipeline"
+             git remote set-url origin $(repository_full_path)
+             git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+             git remote update
+             git fetch
+
+       - task: PowerShell@2
+         inputs:
+           filePath: '$(System.DefaultWorkingDirectory)/build/generate-change-log.ps1'
+           arguments: '-vsPath "$(System.DefaultWorkingDirectory)" -generateVersion $true -autoCommitAndPush $true -autoGetLatestDevelop $true -sourceBranch "$(branchName)" -destinationBranch "develop" -buildApplicationName "MyApplication"'
+      
